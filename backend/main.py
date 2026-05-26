@@ -1,5 +1,6 @@
-# Backend stub — replaced in issue #2
-import time
-print("Backend running")
-while True:
-    time.sleep(3600)
+from fastapi import FastAPI
+from app.router import router
+
+app = FastAPI(title="D&D Campaign Manager")
+
+app.include_router(router)
