@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dnd_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dnd_user
+      POSTGRES_PASSWORD: dnd_password
+      POSTGRES_DB: dnd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - dnd_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dnd_user -d dnd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dnd_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dnd_user:dnd_password@postgres:5432/dnd
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dnd_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dnd_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - dnd_network
+
+networks:
+  dnd_network:
+    driver: bridge
+
+volumes:
+  pgdata:
