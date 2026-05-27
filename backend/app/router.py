@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import check_db_connection, get_db
+from app.routes.auth import router as auth_router
 
 router = APIRouter(prefix="/api/v1")
+
+router.include_router(auth_router)
 
 
 @router.get("/health")
