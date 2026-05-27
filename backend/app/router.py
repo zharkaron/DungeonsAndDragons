@@ -6,11 +6,13 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.routes.auth import router as auth_router
 from app.routes.campaigns import router as campaigns_router
+from app.routes.characters import router as characters_router
 
 router = APIRouter(prefix="/api/v1")
 
 router.include_router(auth_router)
 router.include_router(campaigns_router)
+router.include_router(characters_router)
 
 
 @router.get("/health")
