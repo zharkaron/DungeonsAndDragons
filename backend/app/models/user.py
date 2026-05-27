@@ -1,8 +1,16 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from enum import Enum as PyEnum
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, DateTime, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
-from datetime import datetime
+
 from app.database import Base
+
+
+class UserRole(str, PyEnum):
+    player = "player"
+    dungeon_master = "dungeon_master"
 
 
 class User(Base):
@@ -12,5 +20,11 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
-    is_dm: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="userrole", create_constraint=True),
+        default=UserRole.player,
+        server_default="player",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
