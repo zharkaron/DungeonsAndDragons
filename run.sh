@@ -1,4 +1,3 @@
-cat run.sh
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -7,24 +6,63 @@ cd "$(dirname "$0")"
 COMPOSE=(docker compose)
 
 if ! docker compose version >/dev/null 2>&1; then
-    if command -v docker-compose >/dev/null 2>&1; then
-        COMPOSE=(docker-compose)
-    else
-        echo "Docker Compose is required. Install Docker Compose v2 or docker-compose." >&2
-        exit 1
-    fi
+  if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE=(docker-compose)
+  else
+    echo "Docker Compose is required." >&2
+    exit 1
+  fi
 fi
 
-echo "Stopping old AthenaCodex containers and removing orphans..."
-"${COMPOSE[@]}" down --remove-orphans
+usage() {
+  echo "Usage: $0 {up|down|restart|build|clean|logs|status}"
+  echo "  up        Build and start all services"
+  echo "  down      Stop all services (keep images/volumes)"
+  echo "  restart   Rebuild and restart all services"
+  echo "  build     Rebuild images without starting"
+  echo "  clean     Stop and remove containers, images, volumes, networks"
+  echo "  logs      Follow logs for all services"
+  echo "  status    Show running services"
+  exit 1
+}
 
-echo "Building and starting AthenaCodex in the background..."
-"${COMPOSE[@]}" up -d --build
+[[ $# -eq 0 ]] && usage
 
-echo
-echo "AthenaCodex is starting. Current container status:"
-"${COMPOSE[@]}" ps
-echo
-echo "Open the UI at: http://localhost:${NGINX_HTTP_PORT:-80}"
-echo "View logs with: ${COMPOSE[*]} logs -f"
-echo "Stop with: ${COMPOSE[*]} down"
+case "$1" in
+  up)
+    echo ">>> Building and starting all services..."
+    "${COMPOSE[@]}" up -d --build
+    echo ">>> Done."
+    ;;
+  down)
+    echo ">>> Stopping all services..."
+    "${COMPOSE[@]}" down --remove-orphans
+    echo ">>> Done."
+    ;;
+  restart)
+    echo ">>> Rebuilding and restarting all services..."
+    "${COMPOSE[@]}" down --remove-orphans
+    "${COMPOSE[@]}" up -d --build
+    echo ">>> Done."
+    ;;
+  build)
+    echo ">>> Rebuilding all images..."
+    "${COMPOSE[@]}" build
+    echo ">>> Done."
+    ;;
+  clean)
+    echo ">>> Cleaning all containers, images, volumes, and networks..."
+    "${COMPOSE[@]}" down --rmi all --volumes --remove-orphans
+    echo ">>> Done."
+    ;;
+  logs)
+    "${COMPOSE[@]}" logs -f
+    ;;
+  status)
+    "${COMPOSE[@]}" ps
+    ;;
+  *)
+    echo "Unknown command: $1"
+    usage
+    ;;
+esac
